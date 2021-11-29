@@ -4,7 +4,9 @@ This is the PyTorch implementation of the manscript "Universal Deep Network for 
 
 # Requirements:
 CUDA (10.2)
+
 cuDNN (7.4.1)
+
 python (3.6.9)
 
 
