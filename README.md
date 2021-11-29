@@ -1,5 +1,6 @@
 # UCNet_Steganalysis
 
-The source code for manuscript "Universal Deep Network for Steganalysis of Color Image based on Channel Representation"
+This is the PyTorch implementation of the manscript "Universal Deep Network for Steganalysis of Color Image based on Channel Representation". 
 
+# Requirements:
 The version to be improved...
