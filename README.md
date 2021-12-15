@@ -7,8 +7,10 @@ CUDA (10.2)
 cuDNN (7.4.1)
 python (3.6.9)
 
-
+# Use
+"UCNet_model.py" is the main program of the model
+"High-pass filters" contains the 30 SRM filters 
 
 
 # Note
-The complete code is being updated...
+The complete version is being updated...
