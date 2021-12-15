@@ -189,16 +189,16 @@ class Net(nn.Module):
   def forward(self, input):
     output = input
     
-    output_y = output[:, 0, :, :]
-    output_u = output[:, 1, :, :] 
-    output_v = output[:, 2, :, :] 
-    out_y = output_y.unsqueeze(1)
-    out_u = output_u.unsqueeze(1)
-    out_v = output_v.unsqueeze(1)
-    y = self.pre(out_y)
-    u = self.pre(out_u)
-    v = self.pre(out_v)
-    output = torch.cat([y, u, v], dim=1)
+    output_c1 = output[:, 0, :, :]
+    output_c2 = output[:, 1, :, :] 
+    output_c3 = output[:, 2, :, :] 
+    out_c1 = output_c1.unsqueeze(1)
+    out_c2 = output_c2.unsqueeze(1)
+    out_c3 = output_c3.unsqueeze(1)
+    c1 = self.pre(out_c1)
+    c2 = self.pre(out_c2)
+    c3 = self.pre(out_c3)
+    output = torch.cat([c1, c2, c3], dim=1)
     output = self.group1(output)
     output = self.group2(output)
     output = self.group3(output)
