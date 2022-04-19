@@ -12,6 +12,8 @@ python (3.6.9)
 
 "High-pass filters" contains the 30 SRM filters 
 
+Example: python3 UCNet_Spatial.py -g 0 -
+
 
 # Note
 The complete version is being updated...
