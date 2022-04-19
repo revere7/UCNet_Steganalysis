@@ -554,7 +554,7 @@ def myParseArgs():
         '--STEGANOGRAPHY',
         help='embedding_algorithm',
         type=str,
-        choices=['HILL-CMDC', 'SUNIWARD-CMDC', 'J-UNIWARD', 'UED'],
+        choices=['CMDC-HILL', 'CMDC-SUNIWARD', 'GINA-HILL', 'GINA-SUNIWARD'],
         required=True
     )
 
@@ -563,7 +563,7 @@ def myParseArgs():
         '--EMBEDDING_RATE',
         help='embedding_rate',
         type=str,
-        choices=[ '0.2', '0.3', '0.4'],
+        choices=[ '0.4', '0.3', '0.2'],
         required=True
     )
 
