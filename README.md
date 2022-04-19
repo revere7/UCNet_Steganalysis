@@ -12,8 +12,12 @@ python (3.6.9)
 
 "High-pass filters" contains the 30 SRM filters 
 
-Example: python3 UCNet_Spatial.py -g 0 -
+
+Example: 
+If you want to detect CMDC-HILL steganography method at 0.4 bpc (on GPU #1), you can enter following command:
+
+"python3 UCNet_Spatial.py -alg CMDC-HILL -rate 0.4 -g 1"
 
 
 # Note
-The complete version is being updated...
+If you have any question, please contact me. (revere.wei@outlook.com)
