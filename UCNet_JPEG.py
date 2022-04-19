@@ -30,7 +30,6 @@ from srm_filter_kernel import all_normalized_hpf_list
 
 IMAGE_SIZE = 256
 BATCH_SIZE = 25
-EPOCHS = 300
 LR = 0.02
 WEIGHT_DECAY = 5e-4
 
@@ -44,7 +43,6 @@ OUTPUT_PATH = Path(__file__).stem
 class TLU(nn.Module):
   def __init__(self, threshold):
     super(TLU, self).__init__()
-
     self.threshold = threshold
 
   def forward(self, input):
@@ -73,6 +71,7 @@ def build_filters():
                 filters.append(kern)
     return filters
         
+    
 class HPF(nn.Module):
   def __init__(self):
     super(HPF, self).__init__()
@@ -84,38 +83,41 @@ class HPF(nn.Module):
     self.hpf = nn.Conv2d(1, 62, kernel_size=5, padding=2, bias=False)
     self.hpf.weight = hpf_weight
 
-    #self.quant = Quant(1.0)
     self.tlu = TLU(4.0)
 
   def forward(self, input):
-
     output = self.hpf(input)
     output = self.tlu(output)
 
-
     return output
 
-class Layer_T1(nn.Module):
-  def __init__(self,in_channel):
-    super(Layer_T1, self).__init__()
-
-    self.layers = nn.Sequential(
-      nn.Conv2d(in_channel, 32, kernel_size=3, padding=1, bias=False),
-      nn.BatchNorm2d(32),
-      nn.ReLU(),
-      nn.Conv2d(32, 32, kernel_size=3, padding=1, bias=False),
-      nn.BatchNorm2d(32),
-    )
-    
-  def forward(self, input):
-    output = self.layers(input)
-
-    return output             
-    
-    
-class block2(nn.Module):
+  
+class Type1(nn.Module):
     def __init__(self, inchannel, outchannel):
-        super(block2, self).__init__()
+        super(Type1, self).__init__()
+        self.inchannel=inchannel
+        self.outchannel=outchannel
+        self.relu = nn.ReLU()
+
+        self.basic=nn.Sequential(
+                nn.Conv2d(inchannel, outchannel, kernel_size=3, padding=1),
+                nn.BatchNorm2d(outchannel),
+                nn.ReLU(),
+                
+                nn.Conv2d(outchannel, outchannel, kernel_size=3, padding=1),
+                nn.BatchNorm2d(outchannel),
+                nn.ReLU()
+                )
+
+    def forward(self,x):
+        out=self.basic(x)
+
+        return out
+      
+    
+class Type2(nn.Module):
+    def __init__(self, inchannel, outchannel):
+        super(Type2, self).__init__()
         self.inchannel=inchannel
         self.outchannel=outchannel
         self.relu = nn.ReLU()
@@ -127,7 +129,7 @@ class block2(nn.Module):
                 
                 nn.Conv2d(inchannel, outchannel, kernel_size=3, padding=1),
                 nn.BatchNorm2d(outchannel),
-                #nn.ReLU(),
+            
                 nn.AvgPool2d(kernel_size=3, padding=1, stride=2),
                 )
         self.shortcut=nn.Sequential(
@@ -142,9 +144,9 @@ class block2(nn.Module):
         return out
         
         
-class block1(nn.Module):
+class Type3(nn.Module):
     def __init__(self, inchannel, outchannel):
-        super(block1, self).__init__()
+        super(Type3, self).__init__()
         self.inchannel=inchannel
         self.outchannel=outchannel
         self.relu=nn.ReLU()
@@ -158,8 +160,6 @@ class block1(nn.Module):
                 nn.ReLU(),
                 nn.Conv2d(outchannel, outchannel, kernel_size=1),
                 nn.BatchNorm2d(outchannel),
-                #nn.ReLU(),
-                #nn.AvgPool2d(kernel_size=3, padding=1, stride=2)
                 )
         self.shortcut=nn.Sequential(
                 nn.Conv2d(inchannel, outchannel, kernel_size=3, stride=2, padding=1),
@@ -170,85 +170,45 @@ class block1(nn.Module):
         out+=self.shortcut(x)
         out=self.relu(out)
         return out
-        
-
-class Layer_T2(nn.Module):
-  def __init__(self, in_channel, out_channel):
-    super(Layer_T2, self).__init__()
-
-    self.in_channel = in_channel
-    self.out_channel = out_channel
-
-    self.layers = nn.Sequential(
-      nn.Conv2d(in_channel, out_channel, kernel_size=3, padding=1, bias=False),
-      nn.BatchNorm2d(out_channel),
-      nn.ReLU(),
-      nn.Conv2d(out_channel, out_channel, kernel_size=3, padding=1, bias=False),
-      nn.BatchNorm2d(out_channel),
-    )
-
-
-  def forward(self, input):
-    output = self.layers(input)
-    ouptut = output + input
-
-    return output
     
-    
-        
         
 class Net(nn.Module):
   def __init__(self):
     super(Net, self).__init__()
-    self.relu = nn.ReLU()
-    self.group1 = HPF()
-
-    self.group2 = nn.Sequential(          
-      nn.Conv2d(186, 32, kernel_size=3, padding=1),
-      nn.BatchNorm2d(32),
-      nn.ReLU(),
-
-      nn.Conv2d(32, 32, kernel_size=3, padding=1),
-      nn.BatchNorm2d(32),
-      nn.ReLU(),
-
-      block2(32,32)
-    )
-    self.group3 = block1(32,64)
-    self.group4 = block2(64,128)
-
-    self.group5 = nn.Sequential(
-      nn.Conv2d(128, 128, kernel_size=3, padding=1),
-      nn.BatchNorm2d(128),
-      nn.ReLU(),
-      
-      nn.Conv2d(128, 256, kernel_size=3, padding=1),
-      nn.BatchNorm2d(256),
-      nn.ReLU(),
-      nn.AvgPool2d(kernel_size=32, stride=1)
-    )
     
-    #self.fc1 = nn.Linear(int(256 * (256 + 1) / 2), 2)
+    self.pre = HPF()
+
+    self.group1 = type1(186,32)
+    self.group2 = type2(32,32)
+    self.group3 = type3(32,64)
+    self.group4 = type2(64,128)
+    self.group5 = type1(128,256)
+    
+    self.avg = nn.AvgPool2d(kernel_size=32, stride=1)
     self.fc1 = nn.Linear(1 * 1 * 256, 2)
 
   def forward(self, input):
     output = input
     
-    output_y = output[:, 0, :, :]
-    output_u = output[:, 1, :, :] 
-    output_v = output[:, 2, :, :] 
-    out_y = output_y.unsqueeze(1)
-    out_u = output_u.unsqueeze(1)
-    out_v = output_v.unsqueeze(1)
-    y = self.group1(out_y)
-    u = self.group1(out_u)
-    v = self.group1(out_v)
-    output = torch.cat([y, u, v], dim=1)
+    # seperate color channels
+    output_c1 = output[:, 0, :, :]
+    output_c2 = output[:, 1, :, :] 
+    output_c3 = output[:, 2, :, :] 
+    out_c1 = output_c1.unsqueeze(1)
+    out_c2 = output_c2.unsqueeze(1)
+    out_c3 = output_c3.unsqueeze(1)
+    c1 = self.pre(out_c1)
+    c2 = self.pre(out_c2)
+    c3 = self.pre(out_c3)
+    output = torch.cat([c1, c2, c3], dim=1)
+    
+    output = self.group1(output)
     output = self.group2(output)
     output = self.group3(output)
     output = self.group4(output)
     output = self.group5(output)
-
+    
+    output = self.avg(output)
     output = output.view(output.size(0), -1)
     output = self.fc1(output)
 
@@ -292,7 +252,6 @@ def train(model, device, train_loader, optimizer, epoch):
     label = label.reshape(-1)
 
     data, label = data.to(device), label.to(device)
-    #data, label = data.cuda(), label.cuda()
 
     optimizer.zero_grad()
 
@@ -306,7 +265,7 @@ def train(model, device, train_loader, optimizer, epoch):
 
     losses.update(loss.item(), data.size(0))
 
-    loss.backward()      #BP
+    loss.backward()      
     optimizer.step()
 
     batch_time.update(time.time() - end) #BATCH TIME = BATCH BP+FP
@@ -479,10 +438,6 @@ def setLogger(log_path, mode='a'):
 
 def main(args):
 
-#  setLogger(LOG_PATH, mode='w')
-
-#  Path(OUTPUT_PATH).mkdir(parents=True, exist_ok=True)
-  #mp.set_start_method('spawn')
   statePath = args.statePath
 
   device = torch.device("cuda")
@@ -502,15 +457,13 @@ def main(args):
   STEGANOGRAPHY = args.STEGANOGRAPHY
   EMBEDDING_RATE = args.EMBEDDING_RATE
   JPEG_QUALITY = args.JPEG_QUALITY
-  TIMES = args.times
   
-
-  BOSSBASE_COVER_DIR = '/home/weikangkang/data/ALASKA80000_JPEG1/ALASKA_v2_JPG_256_QF{}_COLOR_noround'.format(JPEG_QUALITY)
-  BOSSBASE_STEGO_DIR = '/home/weikangkang/data/ALASKA80000_JPEG1/ALASKA_v2_JPG_256_QF{}_COLOR_{}_{}_8w_noround'.format(JPEG_QUALITY, STEGANOGRAPHY, EMBEDDING_RATE)
+  BOSSBASE_COVER_DIR = '/xxx/ALASKA_v2_JPG_256_QF{}_COLOR_noround'.format(JPEG_QUALITY)
+  BOSSBASE_STEGO_DIR = '/xxx/ALASKA_v2_JPG_256_QF{}_COLOR_{}_{}_noround'.format(JPEG_QUALITY, STEGANOGRAPHY, EMBEDDING_RATE)
   
-  TRAIN_INDEX_PATH = 'index_list_alska/alaska_train_index_35000.npy'
-  VALID_INDEX_PATH = 'index_list_alska/alaska_valid_index_5000.npy'
-  TEST_INDEX_PATH = 'index_list_alska/alaska_test_index_40005.npy'
+  TRAIN_INDEX_PATH = 'alaska_train_index.npy'
+  VALID_INDEX_PATH = 'alaska_valid_index.npy'
+  TEST_INDEX_PATH = 'alaska_test_index.npy'
   
   LOAD_RATE = float(EMBEDDING_RATE) + 0.1
   LOAD_RATE = round(LOAD_RATE, 1)
@@ -527,32 +480,32 @@ def main(args):
     LR = 0.002
     
 
-  PARAMS_NAME = '{}-{}-{}-params-{}-250-lr={}-{}.pt'.format(STEGANOGRAPHY, EMBEDDING_RATE, DATASET_INDEX, TIMES, LR,JPEG_QUALITY)
-  LOG_NAME = '{}-{}-{}-model_log-{}-250-lr={}-{}'.format(STEGANOGRAPHY, EMBEDDING_RATE, DATASET_INDEX, TIMES, LR,JPEG_QUALITY)
-  PARAMS_NAME1 = '{}-{}-{}-processparams-{}-250-lr={}-{}.pt'.format(STEGANOGRAPHY, EMBEDDING_RATE, DATASET_INDEX, TIMES, LR,JPEG_QUALITY)
-  #statePath='./wenet_t4/'+PARAMS_NAME1
+  PARAMS_NAME = '{}-{}-{}-params-lr={}-{}.pt'.format(STEGANOGRAPHY, EMBEDDING_RATE, DATASET_INDEX, LR,JPEG_QUALITY)
+  LOG_NAME = '{}-{}-{}-model_log-lr={}-{}'.format(STEGANOGRAPHY, EMBEDDING_RATE, DATASET_INDEX,  LR,JPEG_QUALITY)
+  PARAMS_NAME1 = '{}-{}-{}-processparams-lr={}-{}.pt'.format(STEGANOGRAPHY, EMBEDDING_RATE, DATASET_INDEX,  LR,JPEG_QUALITY)
   
   PARAMS_PATH = os.path.join(OUTPUT_PATH, PARAMS_NAME)
   PARAMS_PATH1 = os.path.join(OUTPUT_PATH, PARAMS_NAME1)
   LOG_PATH = os.path.join(OUTPUT_PATH, LOG_NAME)
   
   #transfer learning 
-  PARAMS_INIT_NAME = '{}-{}-{}-params-{}-lr={}-{}.pt'.format(STEGANOGRAPHY, LOAD_RATE, DATASET_INDEX, TIMES, LR, JPEG_QUALITY)
+  PARAMS_INIT_NAME = '{}-{}-{}-params-lr={}-{}.pt'.format(STEGANOGRAPHY, LOAD_RATE, DATASET_INDEX,  LR, JPEG_QUALITY)
   
-  if LOAD_RATE == 0.4 and JPEG_QUALITY == '95':
-    PARAMS_INIT_NAME = '{}-{}-{}-params-{}-lr={}-{}.pt'.format(STEGANOGRAPHY, LOAD_RATE, DATASET_INDEX, TIMES, '0.002', JPEG_QUALITY)
-    
   if LOAD_RATE == 0.4 and JPEG_QUALITY=='75':
-  	PARAMS_INIT_NAME = '{}-{}-{}-params-{}-lr={}-{}.pt'.format(STEGANOGRAPHY, LOAD_RATE, DATASET_INDEX, TIMES, '0.02',  JPEG_QUALITY)
+  	PARAMS_INIT_NAME = '{}-{}-{}-params-lr={}-{}.pt'.format(STEGANOGRAPHY, LOAD_RATE, DATASET_INDEX,  '0.02',  JPEG_QUALITY)
    
   if LOAD_RATE == 0.3 and JPEG_QUALITY=='75':
-  	PARAMS_INIT_NAME = '{}-{}-{}-params-{}-lr={}-{}.pt'.format(STEGANOGRAPHY, LOAD_RATE, DATASET_INDEX, TIMES, '0.01', JPEG_QUALITY)
+  	PARAMS_INIT_NAME = '{}-{}-{}-params-lr={}-{}.pt'.format(STEGANOGRAPHY, LOAD_RATE, DATASET_INDEX, '0.01', JPEG_QUALITY)
    
   if LOAD_RATE == 0.5 and JPEG_QUALITY=='95': 
-  	PARAMS_INIT_NAME = '{}-{}-{}-params-{}-lr={}-{}.pt'.format(STEGANOGRAPHY, EMBEDDING_RATE, DATASET_INDEX, TIMES, '0.02', '75')
+  	PARAMS_INIT_NAME = '{}-{}-{}-params-lr={}-{}.pt'.format(STEGANOGRAPHY, EMBEDDING_RATE, DATASET_INDEX,  '0.02', '75')
+    
+  if LOAD_RATE == 0.4 and JPEG_QUALITY == '95':
+    PARAMS_INIT_NAME = '{}-{}-{}-params-lr={}-{}.pt'.format(STEGANOGRAPHY, LOAD_RATE, DATASET_INDEX,  '0.002', JPEG_QUALITY)
+    
+  if LOAD_RATE == 0.3 and JPEG_QUALITY=='95':
+  	PARAMS_INIT_NAME = '{}-{}-{}-params-lr={}-{}.pt'.format(STEGANOGRAPHY, LOAD_RATE, DATASET_INDEX,  '0.01', JPEG_QUALITY)
   
-  if LOAD_RATE == 0.2 and JPEG_QUALITY=='95':
-  	PARAMS_INIT_NAME = '{}-{}-{}-params-{}-lr={}-{}.pt'.format(STEGANOGRAPHY, LOAD_RATE, DATASET_INDEX, TIMES, '0.005', JPEG_QUALITY)
    
   PARAMS_INIT_PATH = os.path.join(OUTPUT_PATH, PARAMS_INIT_NAME)
 
@@ -585,11 +538,8 @@ def main(args):
 
   optimizer = optim.SGD(param_groups, lr=LR, momentum=0.9)
 
-  # optimizer = optim.SGD(model.parameters(), lr=LR, weight_decay=WEIGHT_DECAY, momentum=0.9)
   EPOCHS = 250
-  #EPOCHS = 150
   DECAY_EPOCH = [80, 140, 190] 
-  #DECAY_EPOCH = [50, 80, 100] 
   TMP = 190
 
     
@@ -660,7 +610,7 @@ def myParseArgs():
     '--DATASET_INDEX',
     help='Path for loading dataset',
     type=str,
-    default='2'
+    default='1'
   )
 
   parser.add_argument(
@@ -668,9 +618,8 @@ def myParseArgs():
     '--STEGANOGRAPHY',
     help='embedding_algorithm',
     type=str,
-    choices=['j-uniward','UED'],
-    #required=True
-    default='JUNIWARD'
+    choices=['J-UNIWARD','UED'],
+    required=True
   )
 
   parser.add_argument(
@@ -679,8 +628,7 @@ def myParseArgs():
     help='embedding_rate',
     type=str,
     choices=['0.1', '0.2', '0.3', '0.4'],
-    #required=True
-    default='0.4'
+    required=True
   )
 
   parser.add_argument(
@@ -689,8 +637,7 @@ def myParseArgs():
     help='JPEG_QUALITY',
     type=str,
     choices=['75', '95'],
-    #required=True
-    default='75'
+    required=True
   )
 
   parser.add_argument(
@@ -700,16 +647,6 @@ def myParseArgs():
     type=str,
     choices=['0', '1', '2', '3'],
     required=True
-    #default=''
-  )
-
-  parser.add_argument(
-    '-t',
-    '--times',
-    help='Determine which gpu to use',
-    type=str,
-    #required=True
-    default=''
   )
 
   parser.add_argument(
