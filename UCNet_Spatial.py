@@ -79,8 +79,7 @@ class HPF(nn.Module):
         self.hpf = nn.Conv2d(1, 62, kernel_size=5, padding=2, bias=False)
         self.hpf.weight = hpf_weight
 
-        self.tlu = TLU(2.0)  # spatial domain, TLU = 2
-        #self.tlu = TLU(4.0)  # JPEG domain, TLU = 4
+        self.tlu = TLU(2.0)  # T= 2
 
     def forward(self, input):
         output = self.hpf(input)
@@ -89,9 +88,9 @@ class HPF(nn.Module):
         return output  
 
       
-class type1(nn.Module):
+class Type1(nn.Module):
     def __init__(self, inchannel, outchannel):
-        super(type1, self).__init__()
+        super(Type1, self).__init__()
         self.inchannel=inchannel
         self.outchannel=outchannel
         self.relu = nn.ReLU()
@@ -112,9 +111,9 @@ class type1(nn.Module):
         return out
       
     
-class type2(nn.Module):
+class Type2(nn.Module):
     def __init__(self, inchannel, outchannel):
-        super(type2, self).__init__()
+        super(Type2, self).__init__()
         self.inchannel=inchannel
         self.outchannel=outchannel
         self.relu = nn.ReLU()
@@ -126,7 +125,7 @@ class type2(nn.Module):
                 
                 nn.Conv2d(inchannel, outchannel, kernel_size=3, padding=1),
                 nn.BatchNorm2d(outchannel),
-                #nn.ReLU(),
+            
                 nn.AvgPool2d(kernel_size=3, padding=1, stride=2),
                 )
         self.shortcut=nn.Sequential(
@@ -141,9 +140,9 @@ class type2(nn.Module):
         return out
         
         
-class type3(nn.Module):
+class Type3(nn.Module):
     def __init__(self, inchannel, outchannel):
-        super(type3, self).__init__()
+        super(Type3, self).__init__()
         self.inchannel=inchannel
         self.outchannel=outchannel
         self.relu=nn.ReLU()
@@ -157,8 +156,6 @@ class type3(nn.Module):
                 nn.ReLU(),
                 nn.Conv2d(outchannel, outchannel, kernel_size=1),
                 nn.BatchNorm2d(outchannel),
-                #nn.ReLU(),
-                #nn.AvgPool2d(kernel_size=3, padding=1, stride=2)
                 )
         self.shortcut=nn.Sequential(
                 nn.Conv2d(inchannel, outchannel, kernel_size=3, stride=2, padding=1),
@@ -174,7 +171,7 @@ class type3(nn.Module):
 class Net(nn.Module):
   def __init__(self):
     super(Net, self).__init__()
-    self.relu = nn.ReLU()
+    
     self.pre = HPF()
 
     self.group1 = type1(186,32)
@@ -189,6 +186,7 @@ class Net(nn.Module):
   def forward(self, input):
     output = input
     
+    # seperate color channels
     output_c1 = output[:, 0, :, :]
     output_c2 = output[:, 1, :, :] 
     output_c3 = output[:, 2, :, :] 
@@ -199,6 +197,7 @@ class Net(nn.Module):
     c2 = self.pre(out_c2)
     c3 = self.pre(out_c3)
     output = torch.cat([c1, c2, c3], dim=1)
+    
     output = self.group1(output)
     output = self.group2(output)
     output = self.group3(output)
@@ -230,7 +229,7 @@ class AverageMeter(object):
 
 
 def train(model, device, train_loader, optimizer, epoch):
-    batch_time = AverageMeter()  # ONE EPOCH TRAIN TIME
+    batch_time = AverageMeter()  
     data_time = AverageMeter()
     losses = AverageMeter()
 
@@ -261,10 +260,10 @@ def train(model, device, train_loader, optimizer, epoch):
 
         losses.update(loss.item(), data.size(0))
 
-        loss.backward()  # BP
+        loss.backward()  
         optimizer.step()
 
-        batch_time.update(time.time() - end)  # BATCH TIME = BATCH BP+FP
+        batch_time.update(time.time() - end)  
         end = time.time()
 
         if i % TRAIN_PRINT_FREQUENCY == 0:
@@ -426,10 +425,6 @@ def setLogger(log_path, mode='a'):
 
 
 def main(args):
-    #  setLogger(LOG_PATH, mode='w')
-
-    #  Path(OUTPUT_PATH).mkdir(parents=True, exist_ok=True)
-    # mp.set_start_method('spawn')
     statePath = args.statePath
 
     device = torch.device("cuda")
@@ -448,26 +443,22 @@ def main(args):
     DATASET_INDEX = args.DATASET_INDEX
     STEGANOGRAPHY = args.STEGANOGRAPHY
     EMBEDDING_RATE = args.EMBEDDING_RATE
-    TIMES = args.times
 
     ALASKA_COVER_DIR = '/path/xxx'
     ALASKA_STEGO_DIR = '/path/xxx_{}_{}/'.format(STEGANOGRAPHY, EMBEDDING_RATE)
 
-    TRAIN_INDEX_PATH = 'index_list/alaska_train_index_20000.npy'
-    VALID_INDEX_PATH = 'index_list/alaska_valid_index_20000.npy'
-    TEST_INDEX_PATH = 'index_list/alaska_test_index_20000.npy'
+    TRAIN_INDEX_PATH = 'alaska_train_index.npy'
+    VALID_INDEX_PATH = 'alaska_valid_index.npy'
+    TEST_INDEX_PATH = 'alaska_test_index.npy'
 
     LOAD_RATE = float(EMBEDDING_RATE) + 0.1
     LOAD_RATE = round(LOAD_RATE, 1)
 
-    PARAMS_NAME = '{}-{}-{}-params-{}-lr={}-{}-{}-{}.pt'.format(STEGANOGRAPHY, EMBEDDING_RATE, DATASET_INDEX, TIMES, LR)
-    LOG_NAME = '{}-{}-{}-model_log-{}-lr={}-{}-{}-{}'.format(STEGANOGRAPHY, EMBEDDING_RATE, DATASET_INDEX, TIMES, LR)
+    PARAMS_NAME = '{}-{}-{}-params-lr={}.pt'.format(STEGANOGRAPHY, EMBEDDING_RATE, DATASET_INDEX,  LR)
+    LOG_NAME = '{}-{}-{}-model_log-lr={}'.format(STEGANOGRAPHY, EMBEDDING_RATE, DATASET_INDEX, LR)
 
     PARAMS_PATH = os.path.join(OUTPUT_PATH, PARAMS_NAME)
     LOG_PATH = os.path.join(OUTPUT_PATH, LOG_NAME)
-
-    # transfer learning
-    PARAMS_INIT_NAME = '{}-{}-{}-params-{}-lr={}-{}-{}-{}.pt'.format(STEGANOGRAPHY, LOAD_RATE, DATASET_INDEX, TIMES, LR)
 
     PARAMS_INIT_PATH = os.path.join(OUTPUT_PATH, PARAMS_INIT_NAME)
 
@@ -502,10 +493,6 @@ def main(args):
     DECAY_EPOCH = [80, 140, 190]
     TMP = 190
 
-    if LOAD_RATE != 0.5:
-        EPOCHS = int(epochs)
-        DECAY_EPOCH = [int(EPOCH1), int(EPOCH2), int(EPOCH3)]
-        TMP = int(EPOCH3)
 
     if statePath:
         logging.info('-' * 8)
@@ -526,10 +513,6 @@ def main(args):
     else:
         startEpoch = 1
 
-    if LOAD_RATE != 0.5:
-        all_state = torch.load(PARAMS_INIT_PATH)
-        original_state = all_state['original_state']
-        model.load_state_dict(original_state)
 
     scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=DECAY_EPOCH, gamma=0.1)
     best_acc = 0.0
@@ -591,14 +574,6 @@ def myParseArgs():
         type=str,
         choices=['0', '1', '2', '3'],
         required=True
-    )
-
-    parser.add_argument(
-        '-t',
-        '--times',
-        help='Determine which gpu to use',
-        type=str,
-        default=''
     )
 
     parser.add_argument(
