@@ -40,20 +40,6 @@ EVAL_PRINT_FREQUENCY = 1
 
 
 OUTPUT_PATH = Path(__file__).stem
-# PARAMS_PATH = os.path.join(OUTPUT_PATH, 'params.pt')
-# LOG_PATH = os.path.join(OUTPUT_PATH, 'model_log')
-
-class Quant(nn.Module):
-  def __init__(self, quanti):
-    super(Quant, self).__init__()
-
-    self.quanti = quanti
-
-  def forward(self, input):
-    output = input / self.quanti
-
-    return output
-
 
 class TLU(nn.Module):
   def __init__(self, threshold):
@@ -84,8 +70,6 @@ def build_filters():
         for k in range(2):
             for j in range(2):
                 kern = cv2.getGaborKernel((ksize[0],ksize[0]),sigma[k],theta,sigma[k]/0.56,0.5,phi[j],ktype=cv2.CV_32F)
-                #print(1.5*kern.sum())
-                #kern /= 1.5*kern.sum()
                 filters.append(kern)
     return filters
         
@@ -94,10 +78,8 @@ class HPF(nn.Module):
     super(HPF, self).__init__()
 
     filt_list = build_filters()
-    #filt_list = np.array([build_filters(),build_filters(),build_filters()])
 
     hpf_weight = nn.Parameter(torch.Tensor(filt_list).view(62, 1, 5, 5), requires_grad=False)
-
 
     self.hpf = nn.Conv2d(1, 62, kernel_size=5, padding=2, bias=False)
     self.hpf.weight = hpf_weight
@@ -105,16 +87,9 @@ class HPF(nn.Module):
     #self.quant = Quant(1.0)
     self.tlu = TLU(4.0)
 
-    # self.sc_bn_1 = nn.BatchNorm2d(30)
-
-
-    # nn.init.constant_(self.sc_bn.weight, 1.0)
-
-
   def forward(self, input):
 
     output = self.hpf(input)
-    #output = self.quant(output)
     output = self.tlu(output)
 
 
