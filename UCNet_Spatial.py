@@ -546,7 +546,7 @@ def myParseArgs():
         '--DATASET_INDEX',
         help='Path for loading dataset',
         type=str,
-        default=''
+        default='1'
     )
 
     parser.add_argument(
