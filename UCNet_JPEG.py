@@ -461,9 +461,9 @@ def main(args):
   BOSSBASE_COVER_DIR = '/xxx/ALASKA_v2_JPG_256_QF{}_COLOR_noround'.format(JPEG_QUALITY)
   BOSSBASE_STEGO_DIR = '/xxx/ALASKA_v2_JPG_256_QF{}_COLOR_{}_{}_noround'.format(JPEG_QUALITY, STEGANOGRAPHY, EMBEDDING_RATE)
   
-  TRAIN_INDEX_PATH = 'alaska_train_index.npy'
-  VALID_INDEX_PATH = 'alaska_valid_index.npy'
-  TEST_INDEX_PATH = 'alaska_test_index.npy'
+  TRAIN_INDEX_PATH = 'index_list/alaska_train_index_14000.npy'
+  VALID_INDEX_PATH = 'index_list/alaska_valid_index_1000.npy'
+  TEST_INDEX_PATH = 'index_list/alaska_test_index_5000.npy'
   
   LOAD_RATE = float(EMBEDDING_RATE) + 0.1
   LOAD_RATE = round(LOAD_RATE, 1)
