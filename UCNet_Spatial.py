@@ -455,7 +455,7 @@ def main(args):
     LOAD_RATE = round(LOAD_RATE, 1)
 
     PARAMS_NAME = '{}-{}-{}-params-lr={}.pt'.format(STEGANOGRAPHY, EMBEDDING_RATE, DATASET_INDEX,  LR)
-    LOG_NAME = '{}-{}-{}-model_log-lr={}'.format(STEGANOGRAPHY, EMBEDDING_RATE, DATASET_INDEX, LR)
+    LOG_NAME = '{}-{}-{}-model_log-lr={}.log'.format(STEGANOGRAPHY, EMBEDDING_RATE, DATASET_INDEX, LR)
 
     PARAMS_PATH = os.path.join(OUTPUT_PATH, PARAMS_NAME)
     LOG_PATH = os.path.join(OUTPUT_PATH, LOG_NAME)
@@ -546,7 +546,7 @@ def myParseArgs():
         '--DATASET_INDEX',
         help='Path for loading dataset',
         type=str,
-        default='1'
+        default=''
     )
 
     parser.add_argument(
