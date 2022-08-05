@@ -446,10 +446,10 @@ def main(args):
 
     ALASKA_COVER_DIR = '/path/xxx'
     ALASKA_STEGO_DIR = '/path/xxx_{}_{}/'.format(STEGANOGRAPHY, EMBEDDING_RATE)
-
-    TRAIN_INDEX_PATH = 'alaska_train_index.npy'
-    VALID_INDEX_PATH = 'alaska_valid_index.npy'
-    TEST_INDEX_PATH = 'alaska_test_index.npy'
+ 
+    TRAIN_INDEX_PATH = 'index_list/alaska_train_index_14000.npy'
+    VALID_INDEX_PATH = 'index_list/alaska_valid_index_1000.npy'
+    TEST_INDEX_PATH = 'index_list/alaska_test_index_5000.npy'
 
     LOAD_RATE = float(EMBEDDING_RATE) + 0.1
     LOAD_RATE = round(LOAD_RATE, 1)
