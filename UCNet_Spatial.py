@@ -460,7 +460,7 @@ def main(args):
     PARAMS_PATH = os.path.join(OUTPUT_PATH, PARAMS_NAME)
     LOG_PATH = os.path.join(OUTPUT_PATH, LOG_NAME)
 
-    PARAMS_INIT_PATH = os.path.join(OUTPUT_PATH, PARAMS_INIT_NAME)
+    #PARAMS_INIT_PATH = os.path.join(OUTPUT_PATH, PARAMS_INIT_NAME)
 
     setLogger(LOG_PATH, mode='w')
 
