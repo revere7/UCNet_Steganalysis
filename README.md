@@ -1,6 +1,6 @@
 # UCNet_Steganalysis
 
-This is the PyTorch implementation of the manuscript "Universal Deep Network for Steganalysis of Color Image based on Channel Representation". 
+This is the PyTorch implementation of the paper "Universal Deep Network for Steganalysis of Color Image based on Channel Representation", TIFS 2022. 
 
 # Requirements:
 CUDA (10.2)
@@ -22,4 +22,4 @@ If you want to detect CMDC-HILL steganography method at 0.4 bpc (on GPU #1), you
 
 
 # Note
-If you have any question, please contact me. (revere.wei@outlook.com)
+If you have any question, please contact me. (weikk5@mail2.sysu.edu.cn)
