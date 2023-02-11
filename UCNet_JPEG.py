@@ -92,9 +92,9 @@ class HPF(nn.Module):
     return output
 
   
-class Type1(nn.Module):
+class Type1a(nn.Module):
     def __init__(self, inchannel, outchannel):
-        super(Type1, self).__init__()
+        super(Type1a, self).__init__()
         self.inchannel=inchannel
         self.outchannel=outchannel
         self.relu = nn.ReLU()
@@ -105,6 +105,28 @@ class Type1(nn.Module):
                 nn.ReLU(),
                 
                 nn.Conv2d(outchannel, outchannel, kernel_size=3, padding=1),
+                nn.BatchNorm2d(outchannel),
+                nn.ReLU()
+                )
+
+    def forward(self,x):
+        out=self.basic(x)
+        return out
+      
+      
+class Type1b(nn.Module):
+    def __init__(self, inchannel, outchannel):
+        super(Type1b, self).__init__()
+        self.inchannel=inchannel
+        self.outchannel=outchannel
+        self.relu = nn.ReLU()
+
+        self.basic=nn.Sequential(
+                nn.Conv2d(inchannel, inchannel, kernel_size=3, padding=1),
+                nn.BatchNorm2d(inchannel),
+                nn.ReLU(),
+                
+                nn.Conv2d(inchannel, outchannel, kernel_size=3, padding=1),
                 nn.BatchNorm2d(outchannel),
                 nn.ReLU()
                 )
@@ -178,14 +200,14 @@ class Net(nn.Module):
     
     self.pre = HPF()
 
-    self.group1 = type1(186,32)
+    self.group1 = type1a(186,32)
     self.group2 = type2(32,32)
     self.group3 = type3(32,64)
     self.group4 = type2(64,128)
-    self.group5 = type1(128,256)
+    self.group5 = type1b(128,256)
     
     self.avg = nn.AvgPool2d(kernel_size=32, stride=1)
-    self.fc1 = nn.Linear(1 * 1 * 256, 2)
+    self.fc = nn.Linear(1 * 1 * 256, 2)
 
   def forward(self, input):
     output = input
@@ -210,7 +232,7 @@ class Net(nn.Module):
     
     output = self.avg(output)
     output = output.view(output.size(0), -1)
-    output = self.fc1(output)
+    output = self.fc(output)
 
     return output
 
@@ -244,27 +266,18 @@ def train(model, device, train_loader, optimizer, epoch):
   for i, sample in enumerate(train_loader):
 
     data_time.update(time.time() - end) 
-
     data, label = sample['data'], sample['label']
-
     shape = list(data.size())
     data = data.reshape(shape[0] * shape[1], *shape[2:])
     label = label.reshape(-1)
-
     data, label = data.to(device), label.to(device)
-
     optimizer.zero_grad()
-
     end = time.time()
-
     output = model(data) #FP
-
 
     criterion = nn.CrossEntropyLoss()
     loss = criterion(output, label)
-
     losses.update(loss.item(), data.size(0))
-
     loss.backward()      
     optimizer.step()
 
@@ -311,10 +324,7 @@ def evaluate(model, device, eval_loader, epoch, optimizer, best_acc, PARAMS_PATH
       shape = list(data.size())
       data = data.reshape(shape[0] * shape[1], *shape[2:])
       label = label.reshape(-1)
-
       data, label = data.to(device), label.to(device)
-      #data, label = data.cuda(), label.cuda()
-
       output = model(data)
       pred = output.max(1, keepdim=True)[1]
       correct += pred.eq(label.view_as(pred)).sum().item()
@@ -355,31 +365,22 @@ def initWeights(module):
     nn.init.constant_(module.weight.data, 1)
     nn.init.constant_(module.bias.data, 0)
 
-
 class AugData():
   def __call__(self, sample):
     data, label = sample['data'], sample['label']
-
     rot = random.randint(0,3)
-
     data = np.rot90(data, rot, axes=[2, 3]).copy()  #gaiwei [2,3]
-
     if random.random() < 0.5:
       data = np.flip(data, axis=2).copy()
 
     new_sample = {'data': data, 'label': label}
-
     return new_sample
 
 
 class ToTensor():
   def __call__(self, sample):
     data, label = sample['data'], sample['label']
-
-    #data = np.expand_dims(data, axis=1) ##delete
     data = data.astype(np.float32)
-    # data = data / 255.0
-
     new_sample = {
       'data': torch.from_numpy(data),
       'label': torch.from_numpy(label).long(),
@@ -441,14 +442,11 @@ def main(args):
   statePath = args.statePath
 
   device = torch.device("cuda")
-
   kwargs = {'num_workers': 1, 'pin_memory': True}
-
   train_transform = transforms.Compose([
     AugData(),
     ToTensor()
   ])
-
   eval_transform = transforms.Compose([
     ToTensor()
   ])
@@ -479,7 +477,6 @@ def main(args):
   if LOAD_RATE == 0.5 and JPEG_QUALITY=='95': 
     LR = 0.002
     
-
   PARAMS_NAME = '{}-{}-{}-params-lr={}-{}.pt'.format(STEGANOGRAPHY, EMBEDDING_RATE, DATASET_INDEX, LR,JPEG_QUALITY)
   LOG_NAME = '{}-{}-{}-model_log-lr={}-{}'.format(STEGANOGRAPHY, EMBEDDING_RATE, DATASET_INDEX,  LR,JPEG_QUALITY)
   PARAMS_NAME1 = '{}-{}-{}-processparams-lr={}-{}.pt'.format(STEGANOGRAPHY, EMBEDDING_RATE, DATASET_INDEX,  LR,JPEG_QUALITY)
