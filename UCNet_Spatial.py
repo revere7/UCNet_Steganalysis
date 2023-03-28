@@ -87,10 +87,10 @@ class HPF(nn.Module):
 
         return output  
 
-      
-class Type1(nn.Module):
+    
+class Type1a(nn.Module):
     def __init__(self, inchannel, outchannel):
-        super(Type1, self).__init__()
+        super(Type1a, self).__init__()
         self.inchannel=inchannel
         self.outchannel=outchannel
         self.relu = nn.ReLU()
@@ -101,6 +101,28 @@ class Type1(nn.Module):
                 nn.ReLU(),
                 
                 nn.Conv2d(outchannel, outchannel, kernel_size=3, padding=1),
+                nn.BatchNorm2d(outchannel),
+                nn.ReLU()
+                )
+
+    def forward(self,x):
+        out=self.basic(x)
+        return out
+      
+      
+class Type1b(nn.Module):
+    def __init__(self, inchannel, outchannel):
+        super(Type1b, self).__init__()
+        self.inchannel=inchannel
+        self.outchannel=outchannel
+        self.relu = nn.ReLU()
+
+        self.basic=nn.Sequential(
+                nn.Conv2d(inchannel, inchannel, kernel_size=3, padding=1),
+                nn.BatchNorm2d(inchannel),
+                nn.ReLU(),
+                
+                nn.Conv2d(inchannel, outchannel, kernel_size=3, padding=1),
                 nn.BatchNorm2d(outchannel),
                 nn.ReLU()
                 )
@@ -174,11 +196,11 @@ class Net(nn.Module):
     
     self.pre = HPF()
 
-    self.group1 = type1(186,32)
+    self.group1 = type1a(186,32)
     self.group2 = type2(32,32)
     self.group3 = type3(32,64)
     self.group4 = type2(64,128)
-    self.group5 = type1(128,256)
+    self.group5 = type1b(128,256)
     
     self.avg = nn.AvgPool2d(kernel_size=32, stride=1)
     self.fc1 = nn.Linear(1 * 1 * 256, 2)
