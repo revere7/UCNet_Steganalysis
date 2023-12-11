@@ -196,11 +196,11 @@ class Net(nn.Module):
     
     self.pre = HPF()
 
-    self.group1 = type1a(186,32)
-    self.group2 = type2(32,32)
-    self.group3 = type3(32,64)
-    self.group4 = type2(64,128)
-    self.group5 = type1b(128,256)
+    self.group1 = Type1a(186,32)
+    self.group2 = Type2(32,32)
+    self.group3 = Type3(32,64)
+    self.group4 = Type2(64,128)
+    self.group5 = Type1b(128,256)
     
     self.avg = nn.AvgPool2d(kernel_size=32, stride=1)
     self.fc1 = nn.Linear(1 * 1 * 256, 2)
